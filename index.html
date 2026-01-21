@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ランダム単語ウィジェット</title>
+
+<style>
+:root {
+  --bg: #1e1e22;
+  --panel: #2a2a31;
+  --text: #f2f2f2;
+
+  --red: #d06c6c;
+  --orange: #d89b6a;
+  --yellow: #d8c56a;
+  --green: #8fbf8f;
+  --blue: #7aa2c7;
+  --purple: #a08bd3;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.widget {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.title {
+  text-align: center;
+  font-size: 14px;
+  opacity: 0.85;
+  margin-bottom: 8px;
+}
+
+.slot {
+  background: var(--panel);
+  border-radius: 12px;
+  padding: 20px;
+  height: 70px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.buttons {
+  display: flex;
+  gap: 8px;
+}
+
+button {
+  flex: 1;
+  border: none;
+  border-radius: 10px;
+  padding: 10px;
+  background: #3a3a44;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+.copy-msg {
+  text-align: center;
+  font-size: 12px;
+  margin-top: 6px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.settings {
+  margin-top: 12px;
+}
+
+.settings button {
+  width: 100%;
+  background: transparent;
+  border: 1px dashed #555;
+}
+
+.editor {
+  margin-top: 8px;
+  display: none;
+}
+
+label {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+input[type="text"] {
+  width: 100%;
+  background: var(--panel);
+  color: var(--text);
+  border: none;
+  border-radius: 8px;
+  padding: 6px 8px;
+  margin: 4px 0 8px;
+  box-sizing: border-box;
+}
+
+textarea {
+  width: 100%;
+  height: 120px;
+  background: var(--panel);
+  color: var(--text);
+  border: none;
+  border-radius: 8px;
+  padding: 8px;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.save {
+  margin-top: 6px;
+  background: var(--green);
+  color: #000;
+}
+</style>
+</head>
+
+<body>
+<div class="widget">
+  <div class="title" id="title">🎰 ランダム単語</div>
+
+  <div class="slot" id="slot">---</div>
+
+  <div class="buttons">
+    <button id="spin">回す</button>
+    <button id="copy">コピー</button>
+  </div>
+
+  <div class="copy-msg" id="copyMsg">コピーしました</div>
+
+  <div class="settings">
+    <button id="toggle">⚙ 設定</button>
+    <div class="editor" id="editor">
+      <label>タイトル</label>
+      <input type="text" id="titleInput">
+
+      <label>単語リスト（1行1単語）</label>
+      <textarea id="wordInput"></textarea>
+
+      <button class="save" id="save">保存する</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const defaultTitle = "🎰 ランダム単語";
+const defaultWords = `
+無口な研究者
+騒がしい配信者
+不器用な天才
+優しい怪物
+気だるげな魔法使い
+`.trim();
+
+const colors = [
+  "var(--red)",
+  "var(--orange)",
+  "var(--yellow)",
+  "var(--green)",
+  "var(--blue)",
+  "var(--purple)"
+];
+
+const titleEl = document.getElementById("title");
+const titleInput = document.getElementById("titleInput");
+const slot = document.getElementById("slot");
+const spinBtn = document.getElementById("spin");
+const copyBtn = document.getElementById("copy");
+const copyMsg = document.getElementById("copyMsg");
+const toggleBtn = document.getElementById("toggle");
+const editor = document.getElementById("editor");
+const textarea = document.getElementById("wordInput");
+const saveBtn = document.getElementById("save");
+
+let words = [];
+
+function loadData() {
+  const savedTitle = localStorage.getItem("widgetTitle") ?? defaultTitle;
+  const savedWords = localStorage.getItem("randomWords") ?? defaultWords;
+
+  titleEl.textContent = savedTitle;
+  titleInput.value = savedTitle;
+  textarea.value = savedWords;
+  words = savedWords.split("\n").filter(w => w.trim());
+}
+
+function saveData() {
+  localStorage.setItem("widgetTitle", titleInput.value);
+  localStorage.setItem("randomWords", textarea.value);
+  loadData();
+}
+
+function randomColor() {
+  return colors[Math.floor(Math.random() * colors.length)];
+}
+
+function spin() {
+  if (words.length === 0) return;
+
+  let count = 0;
+  const max = 15 + Math.floor(Math.random() * 10);
+
+  const interval = setInterval(() => {
+    slot.textContent = words[Math.floor(Math.random() * words.length)];
+    slot.style.color = randomColor();
+    count++;
+    if (count > max) clearInterval(interval);
+  }, 60);
+}
+
+spinBtn.onclick = spin;
+
+copyBtn.onclick = () => {
+  navigator.clipboard.writeText(slot.textContent);
+  copyMsg.style.opacity = 1;
+  setTimeout(() => copyMsg.style.opacity = 0, 1000);
+};
+
+toggleBtn.onclick = () => {
+  editor.style.display = editor.style.display === "block" ? "none" : "block";
+};
+
+saveBtn.onclick = saveData;
+
+loadData();
+</script>
+</body>
+</html>
